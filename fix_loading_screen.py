@@ -1,4 +1,17 @@
-import sys
+with open('fishing_game/game/ui/launcher.py', 'r') as f:
+    content = f.read()
+
+import re
+
+# In the current implementation, we successfully placed the new loading_screen into the launcher.py using replace in previous steps
+# The problem was when we ran test_run.py, it was instant because test_run.py wasn't a TTY or Live didn't render perfectly in the simple python script context. Let's make sure beforelaunch is updated and wait_for_fishmain uses our new loading screen logic if needed, or simply uses rich
+
+# We can also add nice animations for beforelaunch.py
+
+with open('fishing_game/game/ui/beforelaunch.py', 'r') as f:
+    before_content = f.read()
+
+before_func = r"""import sys
 import time
 import os
 try:
@@ -188,3 +201,6 @@ if __name__ == "__main__":
         fishmain()
     except NameError:
         pass
+"""
+with open('fishing_game/game/ui/beforelaunch.py', 'w') as f:
+    f.write(before_func)
