@@ -1,0 +1,39 @@
+{
+    "name": "",
+    "money": 935000,
+    "inventory": [],
+    "rod": "Magma Rod",
+    "owned_rods": [
+        "Starter Rod",
+        "Magma Rod"
+    ],
+    "boat": "Wooden boat with topsail",
+    "owned_boats": [
+        "Wooden boat with topsail"
+    ],
+    "location": "Mount. Betalee!",
+    "position": 0.0,
+    "time_offset": 0.0,
+    "totems": {
+        "Celestial Totem": 0
+    },
+    "nebula_active": false,
+    "ocean_disturbance": 0,
+    "hotspot_pos": null,
+    "stats": {
+        "secret_fishes": 0,
+        "giant_phoenix": 0,
+        "mega_leviathan": 0
+    },
+    "quest_state": "none",
+    "weather": "Clear",
+    "weather_timer": 0,
+    "level": 1,
+    "xp": 0.0,
+    "sunset_quest_stage": 0,
+    "wind_quest_stage": 0,
+    "custom_luck_multiplier": 1.0,
+    "last_megalodon_catch_time": 0.0,
+    "enchant_relics": 0,
+    "rod_enchantment": null
+}

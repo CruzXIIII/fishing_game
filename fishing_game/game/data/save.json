@@ -1,0 +1,220 @@
+{
+    "name": "Cruz",
+    "money": 24933446053,
+    "inventory": [
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 269.27,
+            "base_price": 65906,
+            "price": 329530,
+            "mutation": "Sunrise",
+            "size": "Small"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 363.51,
+            "base_price": 65906,
+            "price": 632697,
+            "mutation": "Sunset",
+            "size": "Small"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 18.15,
+            "base_price": 15374,
+            "price": 76870,
+            "mutation": "Sunrise",
+            "size": "Giant"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 24.5,
+            "base_price": 15374,
+            "price": 147590,
+            "mutation": "Sunset",
+            "size": "Giant"
+        },
+        {
+            "name": "Emperor Angelfish",
+            "rarity": "Legendary",
+            "weight": 5.3,
+            "base_price": 1445,
+            "price": 7225,
+            "mutation": "Sunrise",
+            "size": "Big"
+        },
+        {
+            "name": "Emperor Angelfish",
+            "rarity": "Legendary",
+            "weight": 7.16,
+            "base_price": 1445,
+            "price": 13872,
+            "mutation": "Sunset",
+            "size": "Big"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 630.57,
+            "base_price": 166859,
+            "price": 834295,
+            "mutation": "Sunrise",
+            "size": "Big"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 851.27,
+            "base_price": 166859,
+            "price": 1601846,
+            "mutation": "Sunset",
+            "size": "Big"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 31.41,
+            "base_price": 14231,
+            "price": 136617,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 31.41,
+            "base_price": 14231,
+            "price": 136617,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "Coral Dragon",
+            "rarity": "Exotic",
+            "weight": 27.18,
+            "base_price": 35053,
+            "price": 336508,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "Coral Dragon",
+            "rarity": "Exotic",
+            "weight": 27.18,
+            "base_price": 35053,
+            "price": 336508,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 364.11,
+            "base_price": 66919,
+            "price": 642422,
+            "mutation": "Sunset",
+            "size": "Small"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 364.11,
+            "base_price": 66919,
+            "price": 642422,
+            "mutation": "Sunset",
+            "size": "Small"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 951.3,
+            "base_price": 175772,
+            "price": 1687411,
+            "mutation": "Sunset",
+            "size": "Big"
+        },
+        {
+            "name": "The Glitch",
+            "rarity": "Secret",
+            "weight": 951.3,
+            "base_price": 175772,
+            "price": 1687411,
+            "mutation": "Sunset",
+            "size": "Big"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 24.42,
+            "base_price": 12722,
+            "price": 122131,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "Phoenix Fish",
+            "rarity": "Mythical",
+            "weight": 24.42,
+            "base_price": 12722,
+            "price": 122131,
+            "mutation": "Sunset",
+            "size": "Original"
+        },
+        {
+            "name": "Emperor Angelfish",
+            "rarity": "Legendary",
+            "weight": 0.55,
+            "base_price": 280,
+            "price": 2688,
+            "mutation": "Sunset",
+            "size": "Tiny"
+        },
+        {
+            "name": "Emperor Angelfish",
+            "rarity": "Legendary",
+            "weight": 0.55,
+            "base_price": 280,
+            "price": 2688,
+            "mutation": "Sunset",
+            "size": "Tiny"
+        }
+    ],
+    "rod": "Sunset Rod",
+    "owned_rods": [
+        "Starter Rod",
+        "Restricted Wind Sword"
+    ],
+    "boat": "Yacht",
+    "owned_boats": [
+        "Wooden boat with topsail",
+        "Jetski",
+        "Yacht"
+    ],
+    "location": "Beach of Sovereign",
+    "position": 900.0,
+    "time_offset": 62843.22000000005,
+    "totems": {
+        "Celestial Totem": 9,
+        "Nebula Totem": 0,
+        "Weather Totem": 7
+    },
+    "nebula_active": true,
+    "ocean_disturbance": 7668,
+    "hotspot_pos": [
+        588.5865851819335,
+        688.5865851819335
+    ],
+    "stats": {
+        "secret_fishes": 1315,
+        "giant_phoenix": 320,
+        "mega_leviathan": 2
+    },
+    "quest_state": "completed",
+    "weather": "Windy",
+    "weather_timer": 1783250320.5397596,
+    "wind_quest_stage": 1
+}
