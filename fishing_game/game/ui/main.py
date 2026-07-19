@@ -26,6 +26,7 @@ from game.data.data import LOCATION_DATA, BOAT_DATA, FISH_DATA
 from game.ui.ui_utils import format_xp_bar, get_active_buffs, get_totem_summary, get_quest_hint
 
 class FishingGameApp(App):
+    TITLE = "CruzFishingGame 1.41"
     CSS = """
     Screen { layout: horizontal; }
     #sidebar { width: 35%; height: 100%; border-right: solid green; padding: 1; }
