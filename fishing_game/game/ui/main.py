@@ -2,7 +2,10 @@ import sys
 import os
 import time
 import random
-import winsound
+try:
+    import winsound
+except ImportError:
+    winsound = None
 
 try:
     import msvcrt

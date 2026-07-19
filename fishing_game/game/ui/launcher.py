@@ -12,7 +12,8 @@ except ImportError:
 
 from rich.console import Console
 from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
+from rich.live import Live
 from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.layout import Layout
@@ -84,7 +85,10 @@ def run_terminal():
     )
     ascii_logo = apply_line_gradient(fish_art, DARK_BLUE, BRIGHT_BLUE)
 
-    username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    try:
+        username = os.getlogin()
+    except:
+        username = "user"
     hostname = platform.node()
     os_name = platform.system()
     architecture = platform.machine()
@@ -152,11 +156,33 @@ def beep_async(freq, duration):
     if winsound:
         threading.Thread(target=winsound.Beep, args=(freq, duration), daemon=True).start()
 
+def check_skip():
+    if msvcrt and msvcrt.kbhit():
+        key = msvcrt.getch()
+        if key in [b'\r', b'\n', b' ']:
+            return True
+    return False
+
+def check_skip_unix():
+    import select
+    i, o, e = select.select([sys.stdin], [], [], 0.0001)
+    if i:
+        sys.stdin.read(1)
+        return True
+    return False
+
+def is_skip_pressed():
+    if msvcrt:
+        return check_skip()
+    else:
+        return check_skip_unix()
+
 def loading_screen(skip):
     if skip:
         return
     
     console = Console()
+    console.clear()
     
     text = "Good day, welcome to my fishing game. This project is my personal project and all credits belongs to me ultimately. Made by CruzXIIII."
     
@@ -167,63 +193,112 @@ def loading_screen(skip):
             all_files.append(file)
             
     if not all_files:
-        all_files = ["data.cpython-314.pyc"]
+        all_files = ["data.cpython-314.pyc"] * 50
 
-    console.clear()
-    half_files = max(1, len(all_files) // 2)
-    file_interval = max(1, len(text) // half_files)
-    current_file_idx = 0
+    layout = Layout()
+    layout.split_column(
+        Layout(name="header", size=3),
+        Layout(name="main"),
+        Layout(name="footer", size=3)
+    )
     
-    # Phase 1: Typing text with dim green loading
-    for i in range(len(text)):
-        if i % file_interval == 0 and current_file_idx < len(all_files) - 1:
-            current_file_idx += 1
-            
-        text_so_far = text[:i+1]
-        loading_text = f"Loading {all_files[current_file_idx]}..."
-        
-        sys.stdout.write(f"\033[H\n\033[32m{text_so_far}\n\n\033[38;2;0;128;0m{loading_text}\033[0J")
-        sys.stdout.flush()
-        if winsound: beep_async(600 + (i % 3) * 100, 50)
-        time.sleep(0.05)
-        
-    # Phase 2: text is done, loading sequence bright green
-    for i in range(current_file_idx, len(all_files)):
-        loading_text = f"Loading {all_files[i]}..."
-        sys.stdout.write(f"\033[H\n\033[32m{text}\n\n\033[1;32m{loading_text}\033[0J")
-        sys.stdout.flush()
-        if winsound: beep_async(800 + (i % 5) * 50, 150)
-        time.sleep(0.1)
+    layout["main"].split_row(
+        Layout(name="intro", ratio=2),
+        Layout(name="log", ratio=1)
+    )
+    
+    header_text = Text("FISHING GAME - INITIALIZATION SEQUENCE", style="bold cyan")
+    layout["header"].update(Panel(Align.center(header_text), border_style="blue"))
 
-    sys.stdout.write("\n\n")
-    
-    # Phase 3: Modern Boot Countdown
-    with Progress(
-        SpinnerColumn(spinner_name="dots"),
+    progress = Progress(
+        SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
-        transient=True,
-        console=console
-    ) as progress:
-        task = progress.add_task("[cyan]Preparing environment...", total=30)
-        
-        skipped = False
-        for i in range(30, -1, -1):
-            if msvcrt and msvcrt.kbhit():
-                key = msvcrt.getch()
-                if key in [b'\r', b'\n']:
+        BarColumn(bar_width=None, style="dark_green", complete_style="green"),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeRemainingColumn(),
+        expand=True
+    )
+    task_id = progress.add_task("[cyan]Loading resources...", total=len(all_files))
+
+    layout["footer"].update(Panel(progress, border_style="green"))
+
+    intro_text = ""
+    log_messages = []
+
+    old_settings = None
+    if not msvcrt:
+        import termios
+        import tty
+        try:
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            tty.setcbreak(fd)
+        except:
+            pass
+            
+    try:
+        with Live(layout, refresh_per_second=20, console=console):
+            text_idx = 0
+            file_idx = 0
+            skipped = False
+            
+            while file_idx < len(all_files):
+                if is_skip_pressed():
                     skipped = True
                     break
-            
-            desc = f"[bold cyan]Loading complete, opening game in {i/10:.1f} seconds![/bold cyan]"
-            progress.update(task, description=desc, advance=1)
-            if winsound: beep_async(1000 + i * 20, 100)
-            time.sleep(0.1)
-            
-    if skipped:
-        console.print("[bold blue]Loading complete, opening game instantly![/bold blue]")
 
+                if text_idx < len(text):
+                    chars_to_add = max(1, len(text) // (len(all_files) // 2)) if file_idx > 0 else 1
+                    intro_text += text[text_idx:text_idx+chars_to_add]
+                    text_idx += chars_to_add
+                elif text_idx >= len(text) and "..." not in intro_text:
+                    intro_text += "\n\n[yellow]Initialization nearly complete...[/yellow]\n[gray]Press ENTER to skip.[/gray]"
+
+                file = all_files[file_idx]
+                log_messages.append(f"[green]Loaded[/green] {file}")
+                if len(log_messages) > (console.size.height - 10):
+                    log_messages.pop(0)
+
+                progress.update(task_id, advance=1, description=f"[cyan]Loading {file}...")
+
+                intro_panel = Panel(Text.from_markup(intro_text), title="[bold yellow]Message from Creator[/bold yellow]", border_style="blue", padding=(1, 2))
+                log_text = "\n".join(log_messages)
+                log_panel = Panel(Text.from_markup(log_text), title="[bold magenta]System Log[/bold magenta]", border_style="magenta")
+
+                layout["intro"].update(intro_panel)
+                layout["log"].update(log_panel)
+
+                if winsound and file_idx % 3 == 0:
+                    beep_async(600 + (file_idx % 5) * 50, 20)
+
+                time.sleep(0.04)
+                file_idx += 1
+
+            if not skipped:
+                progress.update(task_id, completed=len(all_files), description="[bold green]Loading complete![/bold green]")
+
+                for i in range(15, -1, -1):
+                    if is_skip_pressed():
+                        break
+
+                    progress.update(task_id, description=f"[bold cyan]Opening game in {i/10:.1f} seconds...[/bold cyan]")
+
+                    if winsound:
+                        beep_async(1000 + i * 20, 50)
+                    time.sleep(0.1)
+
+    finally:
+        if old_settings and not msvcrt:
+            import termios
+            try:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            except:
+                pass
+
+    console.clear()
     console.print("\n[bold green][+] System fully operational.[/bold green] 🚀\n")
-    time.sleep(0.5)
+    time.sleep(0.3)
+
 
 def run():
     skip = run_terminal()

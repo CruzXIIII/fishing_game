@@ -1,45 +1,15 @@
-import sys
-import time
+import re
 import os
-try:
-    import winsound
-except ImportError:
-    winsound = None
-from game.data import *
-from rich.console import Console
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
-from rich.live import Live
-from rich.align import Align
-from rich.text import Text
+import sys
 
-try:
-    import msvcrt
-except ImportError:
-    msvcrt = None
-os.system("") # Enable ANSI escape codes on Windows
+with open('fishing_game/game/ui/launcher.py', 'r') as f:
+    content = f.read()
 
-def wait_for_fishmain():
-    sys.stdout.write("\033[2J\033[H") # Clear screen
-    while True:
-        sys.stdout.write("\033[32m") # Green text
-        sys.stdout.flush()
-        try:
-            user_input = input("> ")
-            if user_input.strip() == "python execute":
-                print("\033[32mVery well.\033[0m\n")
-                if winsound: winsound.Beep(1000, 500)
-                time.sleep(1.0)
-                return False
-            elif user_input.strip() == "cruzskip":
-                return True
-            else:
-                if winsound: winsound.Beep(200, 300)
-        except EOFError:
-            return False
+import_lines = "from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn\nfrom rich.live import Live\n"
 
-def check_skip():
+content = content.replace("from rich.progress import Progress, SpinnerColumn, TextColumn\n", import_lines)
+
+loading_func = r"""def check_skip():
     if msvcrt and msvcrt.kbhit():
         key = msvcrt.getch()
         if key in [b'\r', b'\n', b' ']:
@@ -60,8 +30,8 @@ def is_skip_pressed():
     else:
         return check_skip_unix()
 
-def loading_screen():
-    if wait_for_fishmain():
+def loading_screen(skip):
+    if skip:
         return
 
     console = Console()
@@ -152,7 +122,7 @@ def loading_screen():
                 layout["log"].update(log_panel)
 
                 if winsound and file_idx % 3 == 0:
-                    winsound.Beep(600 + (file_idx % 5) * 50, 20)
+                    beep_async(600 + (file_idx % 5) * 50, 20)
 
                 time.sleep(0.04)
                 file_idx += 1
@@ -167,7 +137,7 @@ def loading_screen():
                     progress.update(task_id, description=f"[bold cyan]Opening game in {i/10:.1f} seconds...[/bold cyan]")
 
                     if winsound:
-                        winsound.Beep(1000 + i * 20, 50)
+                        beep_async(1000 + i * 20, 50)
                     time.sleep(0.1)
 
     finally:
@@ -181,10 +151,10 @@ def loading_screen():
     console.clear()
     console.print("\n[bold green][+] System fully operational.[/bold green] 🚀\n")
     time.sleep(0.3)
+"""
 
-if __name__ == "__main__":
-    loading_screen()
-    try:
-        fishmain()
-    except NameError:
-        pass
+parts = content.split("def loading_screen(skip):")
+new_content = parts[0] + loading_func + "\n\n" + "def run():" + parts[1].split("def run():")[1]
+
+with open('fishing_game/game/ui/launcher.py', 'w') as f:
+    f.write(new_content)

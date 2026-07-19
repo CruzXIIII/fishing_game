@@ -1,48 +1,43 @@
 import sys
-import time
-import os
-try:
-    import winsound
-except ImportError:
-    winsound = None
-from game.data import *
+
+with open('fishing_game/game/ui/launcher.py', 'r') as f:
+    content = f.read()
+
+# We want to replace loading_screen with our rich implementation
+import_block = """
 from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
+from rich.prompt import Prompt
 from rich.panel import Panel
 from rich.layout import Layout
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
-from rich.live import Live
 from rich.align import Align
+from rich.status import Status
 from rich.text import Text
+from rich.markup import escape
+from rich.live import Live
+import threading
+"""
 
-try:
-    import msvcrt
-except ImportError:
-    msvcrt = None
-os.system("") # Enable ANSI escape codes on Windows
+content = content.replace(
+"""
+from rich.console import Console
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Prompt
+from rich.panel import Panel
+from rich.layout import Layout
+from rich.align import Align
+from rich.status import Status
+from rich.text import Text
+from rich.markup import escape
+""", import_block.strip() + "\n")
 
-def wait_for_fishmain():
-    sys.stdout.write("\033[2J\033[H") # Clear screen
-    while True:
-        sys.stdout.write("\033[32m") # Green text
-        sys.stdout.flush()
-        try:
-            user_input = input("> ")
-            if user_input.strip() == "python execute":
-                print("\033[32mVery well.\033[0m\n")
-                if winsound: winsound.Beep(1000, 500)
-                time.sleep(1.0)
-                return False
-            elif user_input.strip() == "cruzskip":
-                return True
-            else:
-                if winsound: winsound.Beep(200, 300)
-        except EOFError:
-            return False
-
+loading_func = """
 def check_skip():
     if msvcrt and msvcrt.kbhit():
         key = msvcrt.getch()
-        if key in [b'\r', b'\n', b' ']:
+        if key in [b'\\r', b'\\n', b' ']:
             return True
     return False
 
@@ -60,8 +55,8 @@ def is_skip_pressed():
     else:
         return check_skip_unix()
 
-def loading_screen():
-    if wait_for_fishmain():
+def loading_screen(skip):
+    if skip:
         return
 
     console = Console()
@@ -76,7 +71,7 @@ def loading_screen():
             all_files.append(file)
 
     if not all_files:
-        all_files = ["data.cpython-314.pyc"] * 50
+        all_files = ["data.cpython-314.pyc"] * 50 # fallback
 
     layout = Layout()
     layout.split_column(
@@ -108,6 +103,7 @@ def loading_screen():
     intro_text = ""
     log_messages = []
 
+    # Non-blocking terminal setup for unix
     old_settings = None
     if not msvcrt:
         import termios
@@ -130,13 +126,15 @@ def loading_screen():
                     skipped = True
                     break
 
+                # Advance text
                 if text_idx < len(text):
                     chars_to_add = max(1, len(text) // (len(all_files) // 2)) if file_idx > 0 else 1
                     intro_text += text[text_idx:text_idx+chars_to_add]
                     text_idx += chars_to_add
                 elif text_idx >= len(text) and "..." not in intro_text:
-                    intro_text += "\n\n[yellow]Initialization nearly complete...[/yellow]\n[gray]Press ENTER to skip.[/gray]"
+                    intro_text += "\\n\\n[yellow]Initialization nearly complete...[/yellow]\\n[gray]Press ENTER to skip.[/gray]"
 
+                # Advance file
                 file = all_files[file_idx]
                 log_messages.append(f"[green]Loaded[/green] {file}")
                 if len(log_messages) > (console.size.height - 10):
@@ -144,22 +142,25 @@ def loading_screen():
 
                 progress.update(task_id, advance=1, description=f"[cyan]Loading {file}...")
 
+                # Update panels
                 intro_panel = Panel(Text.from_markup(intro_text), title="[bold yellow]Message from Creator[/bold yellow]", border_style="blue", padding=(1, 2))
-                log_text = "\n".join(log_messages)
+                log_text = "\\n".join(log_messages)
                 log_panel = Panel(Text.from_markup(log_text), title="[bold magenta]System Log[/bold magenta]", border_style="magenta")
 
                 layout["intro"].update(intro_panel)
                 layout["log"].update(log_panel)
 
                 if winsound and file_idx % 3 == 0:
-                    winsound.Beep(600 + (file_idx % 5) * 50, 20)
+                    beep_async(600 + (file_idx % 5) * 50, 20)
 
                 time.sleep(0.04)
                 file_idx += 1
 
             if not skipped:
+                # Fill remaining progress if needed
                 progress.update(task_id, completed=len(all_files), description="[bold green]Loading complete![/bold green]")
 
+                # Countdown phase
                 for i in range(15, -1, -1):
                     if is_skip_pressed():
                         break
@@ -167,7 +168,7 @@ def loading_screen():
                     progress.update(task_id, description=f"[bold cyan]Opening game in {i/10:.1f} seconds...[/bold cyan]")
 
                     if winsound:
-                        winsound.Beep(1000 + i * 20, 50)
+                        beep_async(1000 + i * 20, 50)
                     time.sleep(0.1)
 
     finally:
@@ -179,12 +180,13 @@ def loading_screen():
                 pass
 
     console.clear()
-    console.print("\n[bold green][+] System fully operational.[/bold green] 🚀\n")
+    console.print("\\n[bold green][+] System fully operational.[/bold green] 🚀\\n")
     time.sleep(0.3)
+"""
 
-if __name__ == "__main__":
-    loading_screen()
-    try:
-        fishmain()
-    except NameError:
-        pass
+# Replace the original loading_screen function
+import re
+new_content = re.sub(r'def loading_screen\(skip\):.*?(?=\ndef run\(\):)', loading_func, content, flags=re.DOTALL)
+
+with open('fishing_game/game/ui/launcher.py', 'w') as f:
+    f.write(new_content)
