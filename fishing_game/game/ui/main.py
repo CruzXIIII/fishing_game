@@ -210,10 +210,36 @@ class FishingGameApp(App):
         if self.player.totems.get("Crushed Relic", 0) > 0:
             options.append("Use Crushed Relic"); self.inventory_options_map.append("relic")
             
-        for i, fish in enumerate(self.player.inventory, 1):
-            fish_display = format_fish_name(fish['rarity'], fish['name'], fish.get('mutation'), size=fish.get('size'))
-            options.append(f"{fish_display} - {fish['weight']}kg (${fish['price']})")
-            self.inventory_options_map.append("fish")
+        # Group fishes by rarity, then by identical attributes
+        rarity_order = ["Common", "Uncommon", "Rare", "Legendary", "Mythical", "Exotic", "Secret"]
+        categorized_fish = {r: {} for r in rarity_order}
+
+        for fish in self.player.inventory:
+            rarity = fish.get('rarity', 'Common')
+            if rarity not in categorized_fish:
+                categorized_fish[rarity] = {}
+
+            key = (fish['name'], rarity, fish.get('mutation'), fish.get('size'))
+            if key not in categorized_fish[rarity]:
+                categorized_fish[rarity][key] = {"count": 0, "weight": 0.0, "price": 0, "sample": fish}
+
+            categorized_fish[rarity][key]["count"] += 1
+            categorized_fish[rarity][key]["weight"] += fish['weight']
+            categorized_fish[rarity][key]["price"] += fish['price']
+
+        for rarity in rarity_order:
+            if categorized_fish.get(rarity):
+                options.append(f"--- {rarity} ---")
+                self.inventory_options_map.append("header")
+
+                for key, data in categorized_fish[rarity].items():
+                    sample = data["sample"]
+                    fish_display = format_fish_name(sample['rarity'], sample['name'], sample.get('mutation'), size=sample.get('size'))
+                    count = data["count"]
+                    t_weight = round(data["weight"], 2)
+                    t_price = data["price"]
+                    options.append(f"{fish_display} x{count} - Total: {t_weight}kg (${t_price})")
+                    self.inventory_options_map.append("fish")
             
         options.append("Back"); self.inventory_options_map.append("back")
         self.update_menu("Inventory", options)
