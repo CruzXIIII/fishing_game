@@ -2,7 +2,14 @@ import time
 import random
 import copy
 import sys
-import winsound
+
+try:
+    import winsound
+except ImportError:
+    class _WinsoundDummy:
+        def Beep(self, freq, duration): pass
+    winsound = _WinsoundDummy()
+
 from .data import FISH_DATA, ROD_DATA
 from textual.screen import Screen
 from textual.app import ComposeResult
@@ -49,7 +56,7 @@ def format_fish_name(rarity, name, mutation=None, show_rarity=False, size=None):
             text = f"[{mutation}] {text}"
     if show_rarity:
         text = f"[{rarity.upper()}] {text}"
-        
+
     if rarity in ["Common", "Uncommon"]:
         return f"\033[31m{text}{RESET}"
     elif rarity == "Rare":
@@ -70,32 +77,32 @@ def roll_mutation(rod_name, player=None):
     if player and getattr(player, 'weather', '') == "Rainbow":
         if random.random() < 0.15:
             return "Rainbow", 5.0
-            
+
     if rod_name == "Sunrise Rod":
         return "Sun Blessed", 16.9
-        
+
     if rod_name == "FABULOUS!":
         if random.random() < 0.25:
             return "Fabulously", 9.99
-        
+
     if rod_name == "Fighthard Rod" and random.random() < 0.25:
         return "Fighthard", 15.0
-        
+
     roll = random.random()
     if roll < 0.0000042: return "goat", 77.77
-        
+
     roll = random.random()
     if roll < 0.000012: return "Fabulously", 9.99
-        
+
     roll = random.random()
     chance = 0.01 if rod_name == "Heaven's Rod" else 0.0002
     if roll < chance: return "Upper Heaven", 12.32
-    
+
     # Dreaming
     if rod_name == "Dreambreaker Rod":
         if random.random() < 0.07:
             return "Dreaming", 4.5
-            
+
     # Golden Rainbow
     roll = random.random()
     chance_golden = 0.0001
@@ -105,23 +112,23 @@ def roll_mutation(rod_name, player=None):
         else:
             chance_golden = 0.05
     if roll < chance_golden: return "Golden Rainbow", 8.4
-    
+
     # Rainbow
     roll = random.random()
     chance_rainbow = 0.05 if rod_name == "Heaven's Rod" else 0.01
     if roll < chance_rainbow: return "Rainbow", 5.5
-    
+
     roll = random.random()
     chance = 0.35 if rod_name == "Heaven's Rod" else 0.05
     if roll < chance: return "Heavenly", 7.2
-    
+
     roll = random.random()
     chance = 0.45 if rod_name in ["Polola Rod", "Dreambreaker Rod"] else 0.10
     if roll < chance: return "Eido", 4.2
-    
+
     roll = random.random()
     if roll < 0.02: return "Rotted", 1.1
-    
+
     return None, 1.0
 
 def get_random_fish(player):
@@ -129,44 +136,44 @@ def get_random_fish(player):
     rod = ROD_DATA[rod_name]
     location = player.location
     rarities = ["Common", "Uncommon", "Rare", "Legendary", "Mythical", "Exotic", "Secret"]
-    
+
     # Nebula Luck x8 logic (boost higher rarities)
     base_weights = list(rod["rarity_chance"])
     if player.nebula_active:
         for i in range(2, 7): # Boost Rare to Secret
             base_weights[i] *= 8.0
-            
+
     if getattr(player, 'weather', '') == "Rainbow":
         for i in range(2, 7):
             base_weights[i] *= 12.0
-            
+
     if getattr(player, 'rod_enchantment', None) == "Fortunate":
         for i in range(2, 7):
             base_weights[i] *= 2.75
-            
+
     chosen_rarity = random.choices(rarities, weights=base_weights, k=1)[0]
-    
+
     location_pool = FISH_DATA.get(location, FISH_DATA["Mooseland"])
-    
+
     # --- Megalodon Logic ---
     from game.data.time import get_game_time, is_night
     h, m = get_game_time(player.time_offset)
     night = is_night(h, m)
-    
+
     current_time = time.time()
     can_catch_megalodon = (current_time - getattr(player, 'last_megalodon_catch_time', 0.0)) > 86400
-    
+
     is_megalodon = False
     if location == "Mount. Betalee!" and night and can_catch_megalodon:
         # Base chance 0.012%
         megalodon_chance = 0.00012 * (1 + rod.get("disturbance", 0))
         if player.nebula_active:
             megalodon_chance *= 8.0
-            
+
         if random.random() < megalodon_chance:
             is_megalodon = True
             chosen_rarity = "Exotic"
-            
+
     # Fallback if chosen_rarity is not in pool
     if chosen_rarity not in location_pool:
         available_rarities = [r for r in rarities if r in location_pool]
@@ -174,7 +181,7 @@ def get_random_fish(player):
             chosen_rarity = available_rarities[-1]
         else:
             chosen_rarity = "Common"
-            
+
     if is_megalodon and "Exotic" in location_pool:
         # Ensure we pick Megalodon
         for f in location_pool["Exotic"]:
@@ -188,9 +195,9 @@ def get_random_fish(player):
     if not fish_pool:
         fish_pool = location_pool[chosen_rarity]
     fish_template = random.choice(fish_pool)
-    
+
     weight_bonus = 1.0 + rod.get("weight_bonus", 0.0)
-    
+
     roll = random.random()
     if roll < 0.05: W_initial = random.uniform(0.05, 0.5)
     elif roll < 0.25: W_initial = random.uniform(0.5, 1.0)
@@ -198,14 +205,14 @@ def get_random_fish(player):
     elif roll < 0.90: W_initial = random.uniform(1.5, 2.0)
     elif roll < 0.98: W_initial = random.uniform(2.0, 5.0)
     else: W_initial = random.uniform(5.0, 10.0)
-    
+
     final_w = W_initial * weight_bonus
-    
+
     # Custom luck multiplier logic
     luck_mult = getattr(player, 'custom_luck_multiplier', 1.0)
     if luck_mult > 1.0:
         final_w *= luck_mult
-    
+
     if final_w < 0.5:
         size_name = "Tiny"
         size_mult = 0.2
@@ -224,26 +231,26 @@ def get_random_fish(player):
     else:
         size_name = "Mega"
         size_mult = 3.0
-        
+
     min_w = fish_template["weight_range"][0]
     max_w = fish_template["weight_range"][1]
-    
+
     base_weight = random.uniform(min_w, max_w)
     weight_factor = 1 + ((base_weight - min_w) / (max_w - min_w + 0.1))
-    
+
     final_weight = round(base_weight * final_w, 2)
     base_price = int(fish_template["base_price"] * weight_factor * size_mult)
-    
+
     if getattr(player, 'secondary_enchantment', None) == "Sea Overlord":
         final_weight = round(final_weight * 1.4, 2)
         base_price = int(base_price * 1.4)
-    
+
     if getattr(player, 'weather', '') == "Rainbow":
         base_price = int(base_price * 1.5)
-    
+
     mut_name, mut_mult = roll_mutation(rod_name, player=player)
     final_price = int(base_price * mut_mult)
-    
+
     return {
         "name": fish_template["name"],
         "rarity": chosen_rarity,
@@ -257,18 +264,18 @@ def get_random_fish(player):
 def check_quest_progress(player, caught_fish):
     if caught_fish['rarity'] == 'Secret':
         player.stats['secret_fishes'] += 1
-        
+
     if player.quest_state == "active":
         if caught_fish['size'] == 'Giant' and caught_fish['name'] == 'Phoenix Fish':
             player.stats['giant_phoenix'] += 1
         if caught_fish['size'] == 'Mega' and caught_fish['name'] == 'Leviathan':
             player.stats['mega_leviathan'] += 1
-            
+
         if player.stats['giant_phoenix'] >= 15 and player.stats['mega_leviathan'] >= 2:
             player.quest_state = "completed"
             print("\n\033[93m[QUEST COMPLETE!] You have proven yourself worthy!\033[0m")
             print("\033[93mThe FABULOUS! rod is now available in the shop!\033[0m")
-            
+
     elif player.quest_state == "none" and player.stats['secret_fishes'] >= 5 and player.level >= 250:
         if random.random() < 0.30:
             print("\n\033[95m??? A mysterious voice speaks to you...\033[0m")
@@ -298,16 +305,16 @@ class FishingScreen(Screen):
         self.display_lines = []
         self.success = False
         self.timer = None
-        
+
         self.BAR_SIZE = 100
-        
+
         # Luring variables
         self.lure_progress = 0.0
         self.lure_rate = 0.0
         self.valid_shake_keys = ['a', 'w', 'd']
         self.current_shake_key = 'a'
         self.last_key_change = time.time()
-        
+
         # Minigame variables
         self.max_progress = 100.0
         self.target_start_progress = 10.0
@@ -347,11 +354,11 @@ class FishingScreen(Screen):
         self.forced_progress_speed = 0.0
         self.player_stun_end = 0.0
         self.next_bite_check = 0.0
-        
+
         self.drain_rate = 10.0
         if self.rod_name == "Fighthard Rod":
             self.drain_rate *= 5.0
-            
+
         progress_speeds = {
             "Common": 0.0, "Uncommon": -0.10, "Rare": -0.20,
             "Legendary": -0.40, "Mythical": -0.60, "Exotic": -0.75, "Secret": -0.80
@@ -361,12 +368,12 @@ class FishingScreen(Screen):
             self.fish_progress_speed = -0.85
         if self.is_sunset:
             self.fish_progress_speed = -0.95
-            
+
         self.pressed_space_time = 0.0
 
     def compose(self) -> ComposeResult:
         yield Static("", id="display")
-        
+
     def set_display(self, text):
         from rich.text import Text
         if isinstance(text, str) and '\033' in text:
@@ -389,14 +396,14 @@ class FishingScreen(Screen):
             wait_time *= 0.70
         if self.player.location == "Bematee":
             wait_time /= 5.0
-            
+
         lure_speed = rod_stats.get("lure_speed", 0.0)
         if getattr(self.player, 'rod_enchantment', None) == "Hasty":
             lure_speed += 0.75
         if getattr(self.player, 'weather', '') == "Rainbow":
             lure_speed += 0.30
         self.lure_rate = (100.0 / wait_time) * (1.0 + lure_speed)
-        
+
         self.current_shake_key = random.choice(self.valid_shake_keys)
         self.last_key_change = time.time()
         self.last_frame = time.time()
@@ -432,13 +439,13 @@ class FishingScreen(Screen):
         key = key.lower()
         now = time.time()
         import random
-        
+
         if self.state == "LURING":
             if key == self.current_shake_key:
                 self.lure_progress += 10.0
                 self.current_shake_key = random.choice(self.valid_shake_keys)
                 self.last_key_change = now
-                
+
         elif self.state == "MINIGAME":
             if key == " ":
                 self.pressed_space_time = now
@@ -491,7 +498,7 @@ class FishingScreen(Screen):
                     else:
                         base_click = 8.0
                         self.progress += base_click * (max(0.1, (1.0 + self.fish_progress_speed)) + self.forced_progress_speed)
-                        
+
                     if getattr(self.player, 'rod_enchantment', None) == "Piercing":
                         if random.random() < 0.25:
                             self.global_pending_progress += 7.0
@@ -507,7 +514,7 @@ class FishingScreen(Screen):
         dt = current_time - self.last_frame
         self.last_frame = current_time
         import random
-        
+
         if self.state == "LURING":
             self.lure_progress += self.lure_rate * dt
             if self.lure_progress >= 100.0:
@@ -531,16 +538,16 @@ class FishingScreen(Screen):
                         return
                 self.start_grace()
                 return
-                
+
             if current_time - self.last_key_change > 1.5:
                 self.current_shake_key = random.choice(self.valid_shake_keys)
                 self.last_key_change = current_time
-                
+
             bar_len = int((self.lure_progress / 100.0) * self.BAR_SIZE)
             bar = '=' * bar_len + ' ' * (self.BAR_SIZE - bar_len)
             char = self.current_shake_key
             self.set_display(f"Luring: [{bar}] {self.lure_progress:.1f}% | Press \033[93m'{char}'\033[0m to shake!")
-            
+
         elif self.state == "GRACE":
             elapsed = current_time - self.grace_start
             if elapsed > self.grace_duration:
@@ -551,16 +558,16 @@ class FishingScreen(Screen):
             bar = '=' * bar_len + ' ' * (self.BAR_SIZE - bar_len)
             lines = "\n".join(self.display_lines)
             self.set_display(lines + f"\nProgress: [{bar}] - Get Ready!")
-            
+
         elif self.state == "MINIGAME":
             elapsed = current_time - self.start_time
-            
+
             if current_time - self.pressed_space_time < 0.1:
                 self.holding_duration += dt
             else:
                 self.holding_duration = 0.0
                 self.sunrise_next_check_time = current_time
-                
+
             if self.is_sunrise and self.holding_duration > 0 and current_time >= self.sunrise_next_check_time:
                 delay = max(0.005, 0.025 - (self.holding_duration * 0.04))
                 self.sunrise_next_check_time = current_time + delay
@@ -575,7 +582,7 @@ class FishingScreen(Screen):
                 num_slashes = max(1, int(damage * 3))
                 for _ in range(num_slashes):
                     self.slash_indices.add(random.randint(0, self.BAR_SIZE - 1))
-                    
+
             if elapsed > self.time_limit:
                 bar_len = int((self.progress / self.max_progress) * self.BAR_SIZE)
                 self.set_display(f"\nProgress: [{'=' * bar_len}{' ' * (self.BAR_SIZE - bar_len)}] FAILED! Time's up, it got away...")
@@ -584,20 +591,20 @@ class FishingScreen(Screen):
                 self.set_timer(2.0, close_failed)
                 self.state = "FAILED_HOT"
                 return
-                
+
             if self.is_wind and not self.wind_instant_done:
                 self.wind_instant_done = True
                 self.global_pending_progress += 50.0
                 self.slash_msg = "\033[96m[WIND INSTANT! 50%]\033[0m"
                 self.slash_msg_time = current_time
                 self.slash_color = "\033[96m"
-                
+
             if self.is_eidolon and self.progress >= 70.0 and not self.eidolon_skip_done:
                 self.eidolon_skip_done = True
                 self.slash_msg = "\033[90m[EIDOLON FORCED! +666%]\033[0m"
                 self.slash_msg_time = current_time
                 self.slash_color = "\033[90m"
-                
+
             if self.is_eidolon and self.eidolon_skip_done:
                 self.progress += 666.0 * dt
 
@@ -606,7 +613,7 @@ class FishingScreen(Screen):
                 fill = min(fill_speed, self.fabulous_fill_amount)
                 self.progress += fill
                 self.fabulous_fill_amount -= fill
-                
+
             if self.is_sunset and current_time >= self.sunset_next_slash_time:
                 self.sunset_fill_amount += self.sunset_slash_damage
                 self.slash_msg = f"\033[93m[SUNSET SLASH! +{self.sunset_slash_damage:.1f}]\033[0m"
@@ -617,36 +624,36 @@ class FishingScreen(Screen):
                 for _ in range(num_slashes):
                     self.slash_indices.add(random.randint(0, self.BAR_SIZE - 1))
                 self.sunset_next_slash_time = current_time + self.sunset_slash_interval
-                
+
             if self.sunset_fill_amount > 0:
                 fill_speed = 30.0 * dt
                 fill = min(fill_speed, self.sunset_fill_amount)
                 self.progress += fill
                 self.sunset_fill_amount -= fill
-                
+
             if self.sunrise_fill_amount > 0:
                 fill_speed = (50.0 / 3.0) * dt
                 fill = min(fill_speed, self.sunrise_fill_amount)
                 self.progress += fill
                 self.sunrise_fill_amount -= fill
-                
+
             if self.global_pending_progress > 0:
                 fill_speed = 100.0 * dt
                 fill = min(fill_speed, self.global_pending_progress)
                 self.progress += fill
                 self.global_pending_progress -= fill
-                
+
             effective_drain = 0.0 if current_time < self.stun_end_time else self.drain_rate
             if getattr(self.player, 'rod_enchantment', None) == "Resilient":
                 effective_drain *= 0.85
-                
+
             if self.is_sunrise and (self.fish['rarity'] in ["Legendary", "Mythical", "Exotic", "Secret"] or self.fish['name'] == "Megalodon"):
                 effective_drain *= 1.50
             if self.is_sunset:
                 effective_drain *= 2.0
-                
+
             self.progress -= effective_drain * dt
-            
+
             if current_time >= self.next_bite_check:
                 self.next_bite_check = current_time + random.uniform(1.0, 3.0)
                 if self.fish['name'] == "Megalodon":
@@ -663,22 +670,22 @@ class FishingScreen(Screen):
                         self.slash_msg = "\033[91m[FISH BITE! -10%]\033[0m"
                         self.slash_msg_time = current_time
                         self.slash_color = "\033[91m"
-                        
+
             if self.is_sunrise and self.progress >= 80.0 and not self.sunrise_finisher_active:
                 self.sunrise_finisher_active = True
                 self.slash_msg = apply_sunrise_gradient("[SUNRISE FINISHER! +20]")
                 self.slash_msg_time = current_time
                 self.slash_color = "\033[38;5;226m"
-                
+
             if self.is_sunrise and self.sunrise_finisher_active:
                 self.progress += 30.0 * dt
                 if self.progress > 100.0:
                     self.progress = 100.0
-                    
+
             if self.is_sunrise and self.progress <= 90.0:
                 passive_fill_rate = ((elapsed // 2) * 0.001) * 1.20
                 self.progress += passive_fill_rate * dt
-                
+
             if self.progress >= self.max_progress:
                 msg = ""
                 if self.is_sunrise:
@@ -709,7 +716,7 @@ class FishingScreen(Screen):
                 self.set_timer(2.0, close_success)
                 self.state = "FAILED_HOT"
                 return
-                
+
             if self.progress <= 0:
                 self.set_display(f"\nProgress: [{' ' * self.BAR_SIZE}] FAILED! The fish unhooked!")
                 def close_failed():
@@ -717,12 +724,12 @@ class FishingScreen(Screen):
                 self.set_timer(2.0, close_failed)
                 self.state = "FAILED_HOT"
                 return
-                
+
             bar_len = int((self.progress / self.max_progress) * self.BAR_SIZE)
             display_slash = ""
             top_line = ""
             bar = ""
-            
+
             if self.is_sunrise:
                 bar_content = ""
                 skip = False
@@ -813,10 +820,10 @@ class FishingScreen(Screen):
                     display_slash = self.slash_msg
                 else:
                     bar = '=' * bar_len + ' ' * (self.BAR_SIZE - bar_len)
-                    
+
             if not top_line:
                 top_line = " " * self.BAR_SIZE
-                
+
             animated_text_line = ""
             if self.is_sunrise:
                 sunset_text = "May your slashes burn with the power of the Sun."
@@ -827,7 +834,7 @@ class FishingScreen(Screen):
                     animated_text_line = f"  {revealed}{hidden}\n"
                 else:
                     animated_text_line = f"  {' ' * len(sunset_text)}\n"
-                    
+
             current_ps = (max(0.1, 1.0 + self.fish_progress_speed) + self.forced_progress_speed - 1.0) * 100.0
             full_display = f"{animated_text_line}          {top_line}\nProgress: [{bar}] - Time: {self.time_limit - elapsed:.1f}s {display_slash}\n\033[96mProgress Speed: {current_ps:+.1f}%\033[0m"
             lines = "\n".join(self.display_lines)
@@ -852,7 +859,7 @@ def process_fishing_result(app, player, success, caught_fish):
         clean_msg = re.sub(r'\033\[[0-9;]*m', '', msg).strip()
         if clean_msg:
             app.notify(clean_msg)
-            
+
     if success:
             if player.rod == "Starter Rod":
                 player.ronin_streak = getattr(player, 'ronin_streak', 0) + 1
@@ -868,16 +875,16 @@ def process_fishing_result(app, player, success, caught_fish):
             else:
                 player.sunset_combo = 0
                 catch_count = 1
-            
+
             for i in range(catch_count):
                 if i > 0:
                     caught_fish = get_random_fish(player)
-                    
+
                 if player.rod in ["Sunset Rod", "Sunrise Rod"]:
                     from game.data.time import get_game_time, is_sunset_time
                     h, m = get_game_time(player.time_offset)
                     is_sunset_event = is_sunset_time(h, m)
-                    
+
                     if player.rod == "Sunrise Rod":
                         caught_fish["mutation"] = "Sun Blessed"
                         caught_fish["price"] = int(caught_fish["base_price"] * 125.0)
@@ -890,30 +897,30 @@ def process_fishing_result(app, player, success, caught_fish):
                         else:
                             caught_fish["mutation"] = "Sunrise"
                             caught_fish["price"] = int(caught_fish["base_price"] * 5.0)
-                            
+
                 check_quest_progress(player, caught_fish)
-                
+
                 # Disturbance Mechanic
                 disturbance_gain = 1
                 if getattr(player, 'rod_enchantment', None) == "Victorious":
                     disturbance_gain += 5
                 player.server_disturbance += disturbance_gain
-                
+
                 if player.location == "Mount. Betalee!":
                     player.volcano_disturbance += disturbance_gain
                     if player.volcano_disturbance >= 500:
                         player.volcano_disturbance -= 500
                         player.meteor_crashed = True
                         print("\n\033[91m[METEOR CRASH!]\033[0m A blazing meteor has just crashed into Mount. Betalee!")
-    
+
                 if player.server_disturbance >= 10000:
                     from game.data.time import get_game_time, is_night
                     h, m = get_game_time(player.time_offset)
-                    
+
                     current_real_time = time.time()
                     total_game_seconds = current_real_time * 30 + player.time_offset
                     current_day = int(total_game_seconds // 86400)
-                    
+
                     if is_night(h, m):
                         if current_day >= player.last_nebula_disturbance_day + 5:
                             player.nebula_active = True
@@ -926,16 +933,16 @@ def process_fishing_result(app, player, success, caught_fish):
                             winsound.Beep(1500, 1000)
                     else:
                         print("\n\033[95mCosmic Meteorlogy Event are pending... perhaps you need to make it night.\033[0m")
-                        
+
                 player.add_fish(caught_fish)
-                
+
                 xp_gained = caught_fish.get('price', 0)
                 player.add_xp(xp_gained)
-                
+
                 if random.random() < 0.001:
                     print("\n\033[96m[DROP] You found an Enchant Relic while fishing!\033[0m")
                     player.enchant_relics += 1
-                
+
                 if caught_fish['name'] == 'Megalodon':
                     player.last_megalodon_catch_time = time.time()
                     mut = caught_fish.get('mutation')
@@ -949,7 +956,7 @@ def process_fishing_result(app, player, success, caught_fish):
                     if getattr(player, 'secondary_enchantment', None) == "Wise":
                         xp_to_remove = int(xp_to_remove * 1.2)
                     player.xp -= xp_to_remove
-                    
+
                     from game.data.data import FISH_DATA
                     geode_pool = []
                     for rarity in ["Common", "Uncommon", "Rare", "Legendary"]:
@@ -970,19 +977,19 @@ def process_fishing_result(app, player, success, caught_fish):
                         player.add_xp(reward_fish.get('price', 0))
                 elif player.rod == "FABULOUS!" and random.random() < 0.50:
                     print("\n\033[95m[FABULOUS DUPE!] The fish split into two fabulous copies!\033[0m")
-                    
+
                     duped_fish = copy.deepcopy(caught_fish)
                     duped_fish["mutation"] = "Fabulously"
                     duped_fish["price"] = int(duped_fish["base_price"] * 9.99)
                     duped_fish["weight"] = round(duped_fish["weight"] * 1.25, 2)
-                    
+
                     player.add_fish(duped_fish)
                     player.add_xp(duped_fish.get('price', 0))
-                    
+
                     fish_display = format_fish_name(caught_fish['rarity'], caught_fish['name'], caught_fish.get('mutation'), size=caught_fish.get('size'))
                     print(f"You caught a {fish_display}!")
                     print(f"Weight: {caught_fish['weight']} kg | Value: ${caught_fish['price']}")
-                    
+
                     dupe_display = format_fish_name(duped_fish['rarity'], duped_fish['name'], duped_fish.get('mutation'), size=duped_fish.get('size'))
                     print(f"You also caught a {dupe_display}!")
                     print(f"Weight: {duped_fish['weight']} kg | Value: ${duped_fish['price']}")
@@ -990,9 +997,9 @@ def process_fishing_result(app, player, success, caught_fish):
                     fish_display = format_fish_name(caught_fish['rarity'], caught_fish['name'], caught_fish.get('mutation'), size=caught_fish.get('size'))
                     print(f"You caught a {fish_display}!")
                     print(f"Weight: {caught_fish['weight']} kg | Value: ${caught_fish['price']}")
-                    
+
                 time.sleep(0.1) # Small pause between catches if multiple
-                
+
             player.save()
     else:
         if player.rod == "Starter Rod":
