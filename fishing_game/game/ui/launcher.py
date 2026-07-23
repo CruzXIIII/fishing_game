@@ -84,7 +84,10 @@ def run_terminal():
     )
     ascii_logo = apply_line_gradient(fish_art, DARK_BLUE, BRIGHT_BLUE)
 
-    username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    try:
+        username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    except OSError:
+        username = "user"
     hostname = platform.node()
     os_name = platform.system()
     architecture = platform.machine()
