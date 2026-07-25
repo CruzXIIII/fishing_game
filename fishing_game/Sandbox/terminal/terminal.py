@@ -61,7 +61,10 @@ def terminal():
     )
     ascii_logo = apply_line_gradient(fish_art, DARK_BLUE, BRIGHT_BLUE)
 
-    username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    try:
+        username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    except OSError:
+        username = "user"
     hostname = platform.node()
     os_name = platform.system()
     kernel = platform.release()
@@ -81,7 +84,7 @@ def terminal():
     layout_table = Table.grid(padding=4)
     layout_table.add_column(no_wrap=True)
     layout_table.add_column(no_wrap=True)
-    
+
     layout_table.add_row(ascii_logo, stats_text)
 
     console.print()
@@ -99,7 +102,7 @@ def terminal():
         f"[cyan]{color_block}[/cyan]"
         f"[white]{color_block}[/white]"
     )
-    
+
     console.print(f"   {palette}")
     console.print()
 
