@@ -1,7 +1,13 @@
 import os
 from .data import ROD_DATA
 import time
-import winsound
+try:
+    import winsound
+except ImportError:
+    class _WinsoundDummy:
+        def Beep(self, freq, duration):
+            pass
+    winsound = _WinsoundDummy()
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -22,9 +28,9 @@ def shop_menu(player):
             print("5. Leave Shop")
         else:
             print("4. Leave Shop")
-        
+
         choice = input("Select an option: ")
-        
+
         if choice == '1':
             if not player.inventory:
                 print("You have no fish to sell!")
@@ -56,43 +62,43 @@ def beach_vendors_menu(player):
     from game.data.time import get_game_time, is_night
     while True:
         h, m = get_game_time(player.time_offset)
-        
+
         # Calculate current day to track rejections
         current_real_time = time.time()
         total_game_seconds = current_real_time * 30 + player.time_offset
         current_day = int(total_game_seconds) // 86400
-        
+
         # Check if time is between 12:00 AM and 3:01 AM
         is_midnight = (0 <= h < 3) or (h == 3 and m <= 1)
         rejected_today = getattr(player, 'nebula_rejected_day', -1) == current_day
         bought_today = getattr(player, 'nebula_bought_day', -1) == current_day
-        
+
         clear_screen()
         print("\n\033[96m🌴 --- Beach Vendors --- 🌴\033[0m")
         print(f"💰 Money: \033[92m${player.money}\033[0m")
-        
+
         celestial_count = player.totems.get("Celestial Totem", 0) if hasattr(player, 'totems') else 0
         nebula_count = player.totems.get("Nebula Totem", 0) if hasattr(player, 'totems') else 0
         weather_count = player.totems.get("Weather Totem", 0) if hasattr(player, 'totems') else 0
-        
+
         print("\n\033[92m🌳 Totem Dealer\033[0m")
         print(f"\033[97m1. 🌞 Buy Celestial Totem (x{celestial_count}) - \033[93m$15,000\033[0m")
         print(f"\033[97m2. 🌦️ Buy Weather Totem (x{weather_count}) - \033[93m$5,000\033[0m")
-        
+
         if is_midnight and not player.nebula_active and not rejected_today and not bought_today:
             print("\n\033[95m[Under a mysterious house...]\033[0m")
             print(f"\033[1m\033[95m3. Approach the Mysterious House (x{nebula_count})\033[0m")
-            
+
         print("\n\033[96m🧙 Martin the Enchanter\033[0m")
         print(f"\033[97m4. 📜 Buy Enchant Relics ($5,000 each) - You have {player.enchant_relics}\033[0m")
-        
+
         print("\n\033[93m🗿 Totem Carver\033[0m")
         print("\033[97m5. 🌈 Craft Rainbow Totem (1x Secret Fish, $125,777)\033[0m")
-            
+
         print("\n\033[90m0. 🔙 Back\033[0m")
-        
+
         choice = input("\n\033[97mSelect an option:\033[0m ")
-        
+
         if choice == '1':
             if player.remove_money(15000):
                 player.totems["Celestial Totem"] = player.totems.get("Celestial Totem", 0) + 1
@@ -157,7 +163,7 @@ def beach_vendors_menu(player):
                 if f.get('rarity') == "Secret":
                     secret_idx = i
                     break
-            
+
             if secret_idx != -1 and player.money >= 125777:
                 player.remove_money(125777)
                 player.inventory.pop(secret_idx)
@@ -175,12 +181,12 @@ def beach_vendors_menu(player):
 def buy_boats_menu(player):
     from .data import BOAT_DATA
     available_boats = list(BOAT_DATA.keys())
-    
+
     while True:
         clear_screen()
         print("\n--- Buy Boats ---")
         print(f"Current Boat: {player.boat} | Money: ${player.money}")
-        
+
         for i, boat_name in enumerate(available_boats, 1):
             price = BOAT_DATA[boat_name]['price']
             speed = BOAT_DATA[boat_name]['speed']
@@ -190,18 +196,18 @@ def buy_boats_menu(player):
                 price_str = f"${price}" if price > 0 else "Free"
             print(f"{i}. {boat_name} ({speed} km/h) - {price_str}")
         print(f"{len(available_boats) + 1}. Back")
-        
+
         choice = input("Select a boat to buy/equip: ")
-        
+
         try:
             choice_idx = int(choice) - 1
             if choice_idx == len(available_boats):
                 break
-            
+
             if 0 <= choice_idx < len(available_boats):
                 selected_boat = available_boats[choice_idx]
                 price = BOAT_DATA[selected_boat]['price']
-                
+
                 if player.boat == selected_boat:
                     print(f"You already have the {selected_boat} equipped!")
                 elif selected_boat in player.owned_boats:
@@ -230,12 +236,12 @@ def buy_rods_menu(player):
     available_rods = [name for name, data in ROD_DATA.items() if data['price'] > 0 and name != "Magma Rod"]
     if player.quest_state != "completed" and "FABULOUS!" in available_rods:
         available_rods.remove("FABULOUS!")
-    
+
     while True:
         clear_screen()
         print("\n--- Buy Rods ---")
         print(f"Current Rod: {player.rod} | Money: ${player.money}")
-        
+
         for i, rod_name in enumerate(available_rods, 1):
             price = ROD_DATA[rod_name]['price']
             if rod_name in player.owned_rods:
@@ -244,18 +250,18 @@ def buy_rods_menu(player):
                 price_str = f"${price}"
             print(f"{i}. {rod_name} - {price_str}")
         print(f"{len(available_rods) + 1}. Back")
-        
+
         choice = input("Select a rod to buy/equip: ")
-        
+
         try:
             choice_idx = int(choice) - 1
             if choice_idx == len(available_rods):
                 break
-            
+
             if 0 <= choice_idx < len(available_rods):
                 selected_rod = available_rods[choice_idx]
                 price = ROD_DATA[selected_rod]['price']
-                
+
                 if player.rod == selected_rod:
                     print(f"You already have the {selected_rod} equipped!")
                 elif selected_rod == "Dreambreaker Rod" and player.level < 100:
@@ -289,20 +295,20 @@ def volcano_vendor_menu(player):
         clear_screen()
         print("\n\033[91m🌋 --- Volcano Vendor --- 🌋\033[0m")
         print(f"💰 Money: \033[92m${player.money}\033[0m")
-        
+
         print("\n\033[93mMagma Forger\033[0m")
         if "Magma Rod" in player.owned_rods:
             print("\033[97m1. 🎣 Buy Magma Rod - \033[90mOwned\033[0m")
         else:
             print("\033[97m1. 🎣 Buy Magma Rod - \033[93m$65,000\033[0m")
-            
+
         print("\n\033[96mCosmic Weaver\033[0m")
         print("\033[97m2. ☄️ Buy Meteor Totem - \033[93m$75,000\033[0m")
-            
+
         print("\n\033[90m0. 🔙 Back\033[0m")
-        
+
         choice = input("\n\033[97mSelect an option:\033[0m ")
-        
+
         if choice == '1':
             if "Magma Rod" in player.owned_rods:
                 winsound.Beep(150, 300)
