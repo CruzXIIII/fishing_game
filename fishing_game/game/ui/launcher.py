@@ -8,7 +8,10 @@ import threading
 try:
     import winsound
 except ImportError:
-    winsound = None
+    class _WinsoundDummy:
+        def Beep(self, freq, duration):
+            pass
+    winsound = _WinsoundDummy()
 
 from rich.console import Console
 from rich.table import Table
@@ -84,7 +87,10 @@ def run_terminal():
     )
     ascii_logo = apply_line_gradient(fish_art, DARK_BLUE, BRIGHT_BLUE)
 
-    username = os.getlogin() if hasattr(os, 'getlogin') else "user"
+    try:
+        username = os.getlogin()
+    except OSError:
+        username = "user"
     hostname = platform.node()
     os_name = platform.system()
     architecture = platform.machine()

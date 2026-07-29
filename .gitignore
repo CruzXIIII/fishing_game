@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+test_save.db
+save.db
+test_save.json

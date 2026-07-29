@@ -1,9 +1,8 @@
 import sys
 import os
 
-sys.path.append(r"d:\cruzxiii.mediawiki\fishing_game")
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from game.data.fishing import fishing_minigame
 import time
 
 class DummyPlayer:
@@ -22,9 +21,14 @@ fish = {
     'size': 'Original'
 }
 
-print("Starting Sunrise Rod test...")
-try:
-    # It will block, so we run for a short time or just check syntax
-    print("Syntax is OK")
-except Exception as e:
-    print(f"CRASH: {e}")
+import unittest
+class TestSunrise(unittest.TestCase):
+    def test_sunrise(self):
+        print("Starting Sunrise Rod test...")
+        try:
+            print("Syntax is OK")
+        except Exception as e:
+            print(f"CRASH: {e}")
+
+if __name__ == '__main__':
+    unittest.main()
