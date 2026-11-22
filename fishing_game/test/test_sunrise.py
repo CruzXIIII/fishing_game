@@ -3,7 +3,6 @@ import os
 
 sys.path.append(r"d:\cruzxiii.mediawiki\fishing_game")
 
-from game.data.fishing import fishing_minigame
 import time
 
 class DummyPlayer:

@@ -2,7 +2,13 @@ import sys
 import os
 import time
 import random
-import winsound
+
+try:
+    import winsound
+except ImportError:
+    class _WinsoundDummy:
+        def Beep(self, freq, duration): pass
+    winsound = _WinsoundDummy()
 
 try:
     import msvcrt

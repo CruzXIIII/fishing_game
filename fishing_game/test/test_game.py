@@ -7,8 +7,6 @@ except AttributeError:
 sys.path.append(os.path.join(os.path.dirname(__file__), 'game'))
 from game.data.player import Player
 from game.data.shop import shop_menu
-from game.ui.main import travel_menu
-from game.data.fishing import go_fishing
 
 def test():
     player = Player("test_save.json")

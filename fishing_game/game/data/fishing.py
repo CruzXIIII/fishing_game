@@ -2,7 +2,14 @@ import time
 import random
 import copy
 import sys
-import winsound
+
+try:
+    import winsound
+except ImportError:
+    class _WinsoundDummy:
+        def Beep(self, freq, duration): pass
+    winsound = _WinsoundDummy()
+
 from .data import FISH_DATA, ROD_DATA
 from textual.screen import Screen
 from textual.app import ComposeResult
